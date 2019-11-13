@@ -25,17 +25,29 @@ public class UserGroupController {
 
     private UserGroupService userGroupService;
     private UserService userService;
+    private GroupService groupService;
 
-    public UserGroupController(UserGroupService userGroupService, UserService userService) {
+    public UserGroupController(UserGroupService userGroupService, UserService userService, GroupService groupService) {
         this.userGroupService = userGroupService;
         this.userService = userService;
+        this.groupService = groupService;
     }
 
-//
-//    @PostMapping("/{userId}/{groupId}")
-//    public ResponseEntity<UserGroup> removeUserFromGroup(@PathVariable long userId ,@PathVariable long groupId) {
-//        return new ResponseEntity(userGroupService.save(UserGroup), HttpStatus.CREATED);
-//    }
+    @GetMapping
+    public ResponseEntity<UserGroup> assignUserToGroup(@RequestParam(name = "userId") long userId
+            ,@RequestParam(name = "groupId") long groupId
+            ,@RequestParam(name = "isActive") char isActive) {
+        User user = userService.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("cant find user with id: " + userId));
+        Group group = groupService.findById(groupId)
+                .orElseThrow(() -> new EntityNotFoundException("cant find group with id: " + groupId));
+
+        UserGroup userGroup = new UserGroup();
+        userGroup.setIsActive(isActive);
+        userGroup.setUser(user);
+        userGroup.setGroup(group);
+        return new ResponseEntity<>(userGroupService.save(userGroup) , HttpStatus.CREATED);
+    }
 
     @GetMapping("/{userId}")
     public ResponseEntity<UserGroupsDTO> getUserGroups(@PathVariable long userId) {
@@ -55,10 +67,5 @@ public class UserGroupController {
         UserGroup userGroup = userGroupService.findByUserIdAndGroupId(userId, groupId)
                 .orElseThrow(() -> new EntityNotFoundException(" cant find user user group"));
         userGroupService.delete(userGroup);
-    }
-
-    @GetMapping
-    public ResponseEntity<List<UserGroup>> getAllUsersGroups() {
-        return new ResponseEntity(userGroupService.findAll(), HttpStatus.OK);
     }
 }
